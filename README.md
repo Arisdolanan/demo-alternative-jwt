@@ -1,1 +1,1 @@
-# demo-gofiber-jose
+# demo-alternative-jwt
