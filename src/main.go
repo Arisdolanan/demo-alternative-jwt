@@ -20,7 +20,7 @@ func pasetos() {
 
 	token.SetIssuedAt(time.Now())
 	token.SetNotBefore(time.Now())
-	token.SetExpiration(time.Now().Add(2 * time.Hour))
+	token.SetExpiration(time.Now().Add(10 * time.Minute))
 	token.SetString("user-id", "1")
 
 	// encrypt v4.local.xx [basic encrypt]
@@ -39,12 +39,28 @@ func pasetos() {
 	publicKey := secretKey.Public()                           // DO share this one
 	parser := paseto.NewParserWithoutExpiryCheck()            // only used because this example token has expired, use NewParser() (which checks expiry by default)
 	tokens, _ := parser.ParseV4Public(publicKey, signed, nil) // this will fail if parsing failes, cryptographic checks fail, or validation rules fail
+	exp, _ := tokens.GetExpiration()
 
 	// use hex
 	// decrypt =====
-	publicHex := publicKey.ExportHex()
-	publicHexToDecrypt, _ := paseto.NewV4AsymmetricPublicKeyFromHex(publicHex)
-	tokenss, _ := paseto.NewParser().ParseV4Public(publicHexToDecrypt, signed, nil)
+	publicHex := publicKey.ExportHex() // DO share this one
+	//publicKeyHex, _ := paseto.NewV4AsymmetricPublicKeyFromHex(publicHex)
+	//parsedToken, _ := paseto.NewParser().ParseV4Public(publicKeyHex, signed, nil)
+	//hexExp, _ := hexTokens.GetExpiration()
+
+	parsers := paseto.NewParser()
+	parsers.AddRule(paseto.ForAudience("audience"))
+	parsers.AddRule(paseto.IdentifiedBy("identifier"))
+	parsers.AddRule(paseto.IssuedBy("issuer"))
+	parsers.AddRule(paseto.Subject("subject"))
+	parsers.AddRule(paseto.NotExpired())
+	parsers.AddRule(paseto.ValidAt(time.Now()))
+
+	//publicHexTemp := "423c5b269e0ef945eba46c509d92015b85f256fa1c5bc2a7fe913d0c3f13e224"
+	//signedTemp := "v4.public.eyJleHAiOiIyMDIzLTA4LTI1VDE1OjE3OjQ1KzA3OjAwIiwiaWF0IjoiMjAyMy0wOC0yNVQxNTowNzo0NSswNzowMCIsIm5iZiI6IjIwMjMtMDgtMjVUMTU6MDc6NDUrMDc6MDAiLCJ1c2VyLWlkIjoiMSJ9FQPxkXFs0RYQDPmHVWdGOC0um6mZ9Fgy1tdWWlDl0p05VSh-z7NGbmSk6QR5Mr545usu9SjnB3JjlHckYJtUBw"
+	publicKeyHex, _ := paseto.NewV4AsymmetricPublicKeyFromHex(publicHex)
+	parsedToken, _ := paseto.NewParser().ParseV4Public(publicKeyHex, signed, nil)
+	hexExp, _ := parsedToken.GetExpiration()
 
 	fmt.Println("==================================")
 	fmt.Println("============use local=============")
@@ -57,17 +73,32 @@ func pasetos() {
 	fmt.Println("public key token : ", signed)
 	fmt.Println("public key token hex: ", publicKey.ExportHex())
 	fmt.Println("public info key parse: ", string(tokens.ClaimsJSON()))
+	fmt.Println("public info key parse exp: ", exp)
+	if time.Now().Before(exp) {
+		fmt.Println("hex public info key parse exp: success")
+	} else {
+		fmt.Println("hex public info key parse exp: tidak success")
+	}
 	fmt.Println("==================================")
 	fmt.Println("=============use hex==============")
 	fmt.Println("==================================")
 	fmt.Println("hex public key token : ", signed)
 	fmt.Println("hex public key token hex: ", publicHex)
-	fmt.Println("hex public info key parse : ", string(tokenss.ClaimsJSON()))
+	fmt.Println("hex public info key parse : ", parsedToken)
+	fmt.Println("hex public info key parse : ", string(parsedToken.ClaimsJSON()))
+	fmt.Println("public info key parse exp: ", hexExp)
+	if time.Now().Before(hexExp) {
+		fmt.Println("public info key parse exp: success")
+	} else {
+		fmt.Println("public info key parse exp: tidak success")
+	}
 	fmt.Println("==================================")
 
-	//	use basic auth
-	//	ref https://github.com/Jonss/jupiter-bank-server
+	// use basic auth
+	// ref https://github.com/Jonss/jupiter-bank-server
 
+	// bearer
+	// https://github.com/MahdiDelnavazi/golang-monolithic-boilerplate
 }
 
 func main() {
