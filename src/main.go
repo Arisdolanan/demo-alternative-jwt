@@ -26,36 +26,43 @@ func pasetos() {
 	// encrypt v4.local.xx [basic encrypt]
 	key := paseto.NewV4SymmetricKey() // don't share this!!
 	encrypted := token.V4Encrypt(key, nil)
-	//fmt.Println("private key : ", key)
-	fmt.Println("v4.local. : ", encrypted)
+	parseTokenLocal, _ := paseto.NewParser().ParseV4Local(key, encrypted, nil)
 
 	// encrypt v4.public.xx [better]
 	//Or sign it (this allows recievers to verify it without sharing secrets)
 	secretKey := paseto.NewV4AsymmetricSecretKey() // don't share this!!!
-	publicKey := secretKey.Public()                // DO share this one
 	signed := token.V4Sign(secretKey, nil)
 
 	//Importing a public key, and then [verifying a token]
 
 	// use public
+	publicKey := secretKey.Public()                           // DO share this one
 	parser := paseto.NewParserWithoutExpiryCheck()            // only used because this example token has expired, use NewParser() (which checks expiry by default)
 	tokens, _ := parser.ParseV4Public(publicKey, signed, nil) // this will fail if parsing failes, cryptographic checks fail, or validation rules fail
 
 	// use hex
 	// decrypt =====
 	publicHex := publicKey.ExportHex()
-	publicKeys, _ := paseto.NewV4AsymmetricPublicKeyFromHex(publicHex)
-	parsers := paseto.NewParser()
-	tokenss, _ := parsers.ParseV4Public(publicKeys, signed, nil)
+	publicHexToDecrypt, _ := paseto.NewV4AsymmetricPublicKeyFromHex(publicHex)
+	tokenss, _ := paseto.NewParser().ParseV4Public(publicHexToDecrypt, signed, nil)
 
 	fmt.Println("==================================")
-	fmt.Println("public key token 1 signed : ", signed)
-	fmt.Println("public key token1: ", publicKey)
-	fmt.Println("info public key token 1 : ", string(tokens.ClaimsJSON()))
+	fmt.Println("============use local=============")
 	fmt.Println("==================================")
-	fmt.Println("public key token 1 signed : ", signed)
-	fmt.Println("public key token1 hex: ", publicKey.ExportHex())
-	fmt.Println("info public key token 1 hex after decrypt : ", string(tokenss.ClaimsJSON()))
+	fmt.Println("local key token : ", encrypted)
+	fmt.Println("local key info key parse : ", string(parseTokenLocal.ClaimsJSON()))
+	fmt.Println("==================================")
+	fmt.Println("===========use public=============")
+	fmt.Println("==================================")
+	fmt.Println("public key token : ", signed)
+	fmt.Println("public key token hex: ", publicKey.ExportHex())
+	fmt.Println("public info key parse: ", string(tokens.ClaimsJSON()))
+	fmt.Println("==================================")
+	fmt.Println("=============use hex==============")
+	fmt.Println("==================================")
+	fmt.Println("hex public key token : ", signed)
+	fmt.Println("hex public key token hex: ", publicHex)
+	fmt.Println("hex public info key parse : ", string(tokenss.ClaimsJSON()))
 	fmt.Println("==================================")
 
 	//	use basic auth
@@ -64,7 +71,10 @@ func pasetos() {
 }
 
 func main() {
+	pasetos()
+}
 
+func joses() {
 	// implement jose
 	now := time.Now()
 	kid := uuid.New().String()
